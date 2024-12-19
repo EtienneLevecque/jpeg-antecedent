@@ -1,19 +1,22 @@
+> [!WARNING]  
+> This package is still under active development. The structure and some functions may change substantially.
+
 # JPEG Antecedent
 
 Repository link with the two following papers:
-- [Finding Incompatible Blocks for Reliable JPEG Steganalysis](https://arxiv.org/pdf/2402.13660.pdf) (E. Levecque,
-J. Butora, P. Bas) [1]
-- [Dual JPEG Compatibility: a Reliable and Explainable Tool for Image Forensics](https://arxiv.org/pdf/2408.17106v1) 
-- (E. Levecque, J. Butora, P. Bas) [2]
+- [\[1\] Finding Incompatible Blocks for Reliable JPEG Steganalysis](https://arxiv.org/pdf/2402.13660.pdf) (E. Levecque,
+J. Butora, P. Bas)
+-  [\[2\] Dual JPEG Compatibility: a Reliable and Explainable Tool for Image Forensics](https://arxiv.org/pdf/2408.17106v1) 
+(E. Levecque, J. Butora, P. Bas)
 
-In our first work [1], we have shown that JPEG compression can be seen as a mathematical function that maps a pixel 
+In our first work [\[1\]](https://arxiv.org/pdf/2402.13660.pdf "Finding Incompatible Blocks for Reliable JPEG Steganalysis") we have shown that JPEG compression can be seen as a mathematical function that maps a pixel 
 block to a DCT block. But if you modify your DCT block, does it still have a pixel antecedent? If the answer is no, then
 this block is incompatible!
 This work also shows that most of the time at QF100, the bigger the modification, the more likely your block will be
 incompatible. This method can reliably detect steganography messages embedded in an image at QF100 and outperform the 
 other methods, especially for very small messages.
 
-In the second contribution [2], we extend the search to antecedents of pixel block to have both the search for the 
+In the second contribution [\[2\]](https://arxiv.org/pdf/2408.17106v1 "Dual JPEG Compatibility: a Reliable and Explainable Tool for Image Forensics"), we extend the search to antecedents of pixel block to have both the search for the 
 compression and the decompression. These two elements can be combined to search for an antecedent of any chained pipeline 
 of alternated compression and decompression. This is called the Dual JPEG Antecedent Search algorithm.
 In particular, this dual formulation can be used to detect double compressed JPEG blocks with perfect accuracy and thus
@@ -234,10 +237,11 @@ better) results.
 |  ``variance``  | Select blocks with the highest spatial rounding error variance (Not implemented yet) |
 |    ``pmap``    | Select blocks with the highest probability of modification (Not implemented yet)     |
 
-## Citation
+## References
 
-If you use our work, please cite us with the following citation:
+If you use our work, please cite us with one of the following citations:
 
+```
     @article{levecque2024finding,
         author={Levecque, Etienne and Butora, Jan and Bas, Patrick},
         journal={IEEE Transactions on Information Forensics and Security}, 
@@ -247,6 +251,18 @@ If you use our work, please cite us with the following citation:
         pages={9467-9479},
         doi={10.1109/TIFS.2024.3470650}
     }
+```
+```
+    @preprint{levecque2024dual,
+        title={Dual JPEG Compatibility: a Reliable and Explainable Tool for Image Forensics}, 
+        author={Etienne Levecque and Jan Butora and Patrick Bas},
+        year={2024},
+        eprint={2408.17106},
+        archivePrefix={arXiv},
+        primaryClass={cs.CR},
+        url={https://arxiv.org/abs/2408.17106}, 
+    }
+```
 
 ## License
 
