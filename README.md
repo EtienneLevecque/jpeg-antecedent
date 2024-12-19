@@ -1,37 +1,39 @@
-# Finding incompatible JPEG blocks
+# JPEG Antecedent
 
-Repository for the
-paper [Finding Incompatible Blocks for Reliable JPEG Steganalysis](https://arxiv.org/pdf/2402.13660.pdf) (E. Levecque,
-J. Butora, P. Bas)
+Repository link with the two following papers:
+- [Finding Incompatible Blocks for Reliable JPEG Steganalysis](https://arxiv.org/pdf/2402.13660.pdf) (E. Levecque,
+J. Butora, P. Bas) [1]
+- [Dual JPEG Compatibility: a Reliable and Explainable Tool for Image Forensics](https://arxiv.org/pdf/2408.17106v1) 
+- (E. Levecque, J. Butora, P. Bas) [2]
 
-The JPEG compression can be seen as a mathematical function that maps a pixel block to a DCT block. But if you modify
-your DCT block, does it still have a pixel antecedent? If the answer is no, then this block is incompatible!
+In our first work [1], we have shown that JPEG compression can be seen as a mathematical function that maps a pixel 
+block to a DCT block. But if you modify your DCT block, does it still have a pixel antecedent? If the answer is no, then
+this block is incompatible!
+This work also shows that most of the time at QF100, the bigger the modification, the more likely your block will be
+incompatible. This method can reliably detect steganography messages embedded in an image at QF100 and outperform the 
+other methods, especially for very small messages.
 
-Our work shows that most of the time at QF100, the bigger the modification, the more likely your block will be
-incompatible.
-
-This method can reliably detect steganography messages embedded in an image at QF100 and outperform the other methods,
-especially for very small messages.
+In the second contribution [2], we extend the search to antecedents of pixel block to have both the search for the 
+compression and the decompression. These two elements can be combined to search for an antecedent of any chained pipeline 
+of alternated compression and decompression. This is called the Dual JPEG Antecedent Search algorithm.
+In particular, this dual formulation can be used to detect double compressed JPEG blocks with perfect accuracy and thus
+detect manipulated JPEG images even after a second JPEG compression.
 
 ## Installation
 
-Require **Python >= 3.8**.
+Require **Python >= 3.12**.
 
-Clone the repository:
+Install the package:
 
-    git clone https://github.com/EtienneLevecque/jpeg-antecedent.git
-
-Install the requirements present in the repository files:
-
-    pip install -r requirements.txt
+    pip install jpeg-antecedent
 
 ## Examples
 
 If you have an image, and you want to play with it:
 
 ```python
-from antecedent.image import Image
-from antecedent.pipeline import create_pipeline
+from jpeg_antecedent.image import Image
+from jpeg_antecedent.pipeline import create_pipeline
 
 path = r"path/to/my/image"
 
@@ -62,8 +64,8 @@ If you have a single block:
 
 ```python
 import numpy as np
-from antecedent.block import Block
-from antecedent.pipeline import create_pipeline
+from jpeg_antecedent.block import Block
+from jpeg_antecedent.pipeline import create_pipeline
 
 array = np.random.randint(-1016, 1016, size=(8, 8))  # random DCT block
 block = Block(array)
@@ -78,7 +80,7 @@ else:
     print(f"Compatible!\nFound an antecedent in {iteration} iterations: \n{antecedent}")
 ```
 
-## Dataset usage
+## Dataset usage (to be updated)
 
 If you have a dataset of images or want to customize your search, please use the [config file](config.yaml) as follows.
 
@@ -153,7 +155,7 @@ You can add your custom pipeline to use different DCT algorithms or rounding fun
 the [pipeline.py](antecedent/pipeline.py) with a new class with the following methods:
 
 ```python
-from antecedent.pipeline import JPEGPipeline
+from jpeg_antecedent.pipeline import JPEGPipeline
 
 
 class YourCustomPipeline(JPEGPipeline):
@@ -212,7 +214,7 @@ You can define the pipelines in the config file as follows:
 Or directly in python as follows:
 
 ```python
-from antecedent.pipeline import create_pipeline
+from jpeg_antecedent.pipeline import create_pipeline
 
 grayscale = True  # depends on your image/block
 
@@ -234,7 +236,7 @@ better) results.
 
 ## Citation
 
-If you use our work, please use this citation:
+If you use our work, please cite us with the following citation:
 
     @article{levecque2024finding,
         author={Levecque, Etienne and Butora, Jan and Bas, Patrick},
