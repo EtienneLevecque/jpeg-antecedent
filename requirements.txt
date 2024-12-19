@@ -1,0 +1,10 @@
+gurobipy==11.0.3
+h5py==3.10.0
+jpeglib==1.0.1
+numpy==2.2.0
+pandas==2.2.3
+pillow==11.0.0
+PyYAML==6.0.2
+rich==13.7.1
+scikit-image==0.25.0
+scipy==1.14.1

@@ -1,0 +1,5 @@
+include README.md
+include LICENSE
+
+exclude test/*
+recursive-exclude test/test_images *

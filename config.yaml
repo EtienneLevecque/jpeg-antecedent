@@ -1,0 +1,31 @@
+experiment_name: Experiment Name
+
+seed: 123
+
+data:
+  input_path: "path/to/my/image/folder"
+  output_path: "path/to/my/output/folder"
+  starting_index: 0 # start at the first image of the folder
+  ending_index: -1 # end at the last image of the folder
+
+  preprocessing:
+    avoid_clipped: True
+    percentage_block_per_image: 100
+    sorting_method: variance
+
+antecedent_search:
+  max_workers: null # int, null to use all available CPUs
+  pipeline: naive
+  quality: 100
+
+  heuristic_solver:
+    use: True
+    max_iteration_per_block: 1000
+
+  gurobi_solver: # !! only possible if pipeline == naive !!
+    use: False
+    max_iteration_per_block: 1000
+    mip_focus: 1 # 1, 2 or 3
+    threads: 3 # !! total number of jobs will be threads * worker !!
+    cutoff: 0.500001
+    node_file_start: 0.5 # null for no RAM usage limit
