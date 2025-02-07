@@ -13,9 +13,9 @@ def send_logs(verbose, shared_dict, task_id, iteration, max_iteration, done):
         tmp_dict.update({'completed': iteration, 'total': max_iteration})
         shared_dict[task_id] = tmp_dict
     elif verbose and shared_dict is None and done:
-        print(f"DONE {iteration}/{max_iteration}", end="\r")
+        print(f"\rDONE {iteration}/{max_iteration}")
     elif verbose and shared_dict is None and iteration % 100 == 0:
-        print(f"RUNNING {iteration}/{max_iteration}", end="\r")
+        print(f"\rRUNNING {iteration}/{max_iteration}")
 
 
 class Block:
