@@ -3,7 +3,7 @@
 
 # JPEG Antecedent
 
-Repository link with the two following papers:
+Repository linked with the two following papers:
 - [\[1\] Finding Incompatible Blocks for Reliable JPEG Steganalysis](https://arxiv.org/pdf/2402.13660.pdf) (E. Levecque,
 J. Butora, P. Bas)
 -  [\[2\] Dual JPEG Compatibility: a Reliable and Explainable Tool for Image Forensics](https://arxiv.org/pdf/2408.17106v1) 
