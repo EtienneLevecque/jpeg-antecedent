@@ -191,7 +191,7 @@ class FloatPipeline(JPEGPipeline):
 
     @classmethod
     def is_named(cls, name):
-        return name == 'ifast'
+        return name == 'float'
 
     def dct(self, blocks):
         return quantize_float_fdct(jpeg_fdct_float(blocks - 128), quant_tbl=self.quant_tbl[:blocks.shape[1]],
