@@ -61,6 +61,7 @@ def main(config, config_path, verbose=False):
             update_bar(progress_bar, futures, overall_task, shared_dict)
 
     output_queue.put(None)
+    writing_process.join()
 
     get_image_from_output(path_to_csv, image_mask_output_dir, npy_mask_output_dir, input_path)
 
@@ -142,7 +143,7 @@ def to_csv(path_to_csv, output_queue):
                     antecedent = block.antecedents[pipeline]
                     iteration_heuristic = block.iterations[pipeline]
                     if antecedent is not None:
-                        sol = str(list(np.ravel(antecedent).astype(int)))
+                        sol = str(np.ravel(antecedent).astype(int).tolist())
                     else:
                         sol = None
                 else:
