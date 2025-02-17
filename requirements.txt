@@ -8,3 +8,4 @@ PyYAML==6.0.2
 rich==13.7.1
 scikit-image==0.25.0
 scipy==1.14.1
+setuptools==75.8.0
