@@ -71,15 +71,61 @@ class Block:
         s = c * n * m  # (channel * row * column)
         upper_bound_offset = 0
         if self.is_clipped[pipeline]:
-            upper_bound_offset = pipeline.upper_bound
+            # clipped blocks violate upper bound constraint, thus the upper bound is increased by an arbitrary factor of 5
+            upper_bound_offset = 5 * pipeline.upper_bound
 
         mask = np.ravel(pipeline.pipelines[0].quant_tbl.astype(float) <= pipeline.upper_bound + upper_bound_offset)
         n_changes = np.sum(mask)
         changes = np.stack([np.eye(s, dtype=np.int8)[mask],
                             -np.eye(s, dtype=np.int8)[mask]]).reshape(2 * n_changes, c, n, m)
-
+        changes_first_iteration = np.stack([np.eye(s, dtype=np.int8),
+                                            -np.eye(s, dtype=np.int8)]).reshape(2 * s, c, n, m)
         not_ignored = np.zeros(2 * n_changes, dtype=bool)  # boolean mask
         children_hash = np.zeros(2 * n_changes, dtype=np.int64)  # temporary storage of hashes
+        not_ignored_first_iteration = np.zeros(2 * s, dtype=bool)  # boolean mask
+        children_hash_first_iteration = np.zeros(2 * s, dtype=np.int64)
+
+        # First iteration uses every possible changes to avoid bad starting position without any solution
+        send_logs(verbose, shared_dict, task_id, iter_counter, max_iter, False)
+
+        _, _, current = heappop(queue)  # shape (1, 1 for grayscale or 3, 8, 8)
+        children = current + changes_first_iteration  # all changes
+        children.flags.writeable = False  # read-only array to hash it
+        for i in range(2 * s):
+            child = children[i]
+            children_hash_first_iteration[i] = child.data.tobytes().__hash__()
+            not_ignored_first_iteration[i] = children_hash_first_iteration[i] not in open_set
+        children.flags.writeable = True
+        distance = np.abs((children - float_start) * pipeline.pipelines[0].quant_tbl)
+        norm_distance = np.linalg.norm(distance, axis=(2, 3), ord='fro')
+        not_ignored_first_iteration = not_ignored_first_iteration & np.all(
+            norm_distance <= np.ravel(pipeline.upper_bound + upper_bound_offset),
+            axis=-1)
+
+        if np.any(not_ignored_first_iteration):
+            transformed_children = pipeline.forward(children[not_ignored_first_iteration])
+            abs_error = np.abs(target - transformed_children)
+            error = np.sum(abs_error, axis=(1, 2, 3))
+            error_idx = np.argsort(error)
+
+            if error[error_idx[0]] == 0:  # check only the first element which is the smallest error
+                send_logs(verbose, shared_dict, task_id, max_iter, max_iter, True)
+
+                self.antecedents[pipeline] = children[not_ignored_first_iteration][error_idx[0]]
+                self.status[pipeline] = 1
+                self.iterations[pipeline] = iter_counter
+
+                return self.antecedents[pipeline]
+
+            else:
+                for idx in error_idx:
+                    to_enqueue = (int(error[idx]), rng.random(),
+                                  children[not_ignored_first_iteration][idx].copy())
+
+                    heappush(queue, to_enqueue)
+                    open_set.add(children_hash_first_iteration[not_ignored_first_iteration][idx])
+
+        # Then for all remaining iterations, we use fewer changes depending on the upper bound of the pipeline
         for iter_counter in range(max_iter):
 
             if not queue:
@@ -97,7 +143,8 @@ class Block:
             children.flags.writeable = True
             distance = np.abs((children - float_start) * pipeline.pipelines[0].quant_tbl)
             norm_distance = np.linalg.norm(distance, axis=(2, 3), ord='fro')
-            not_ignored = not_ignored & np.all(norm_distance <= np.ravel(pipeline.upper_bound + upper_bound_offset), axis=-1)
+            not_ignored = not_ignored & np.all(norm_distance <= np.ravel(pipeline.upper_bound + upper_bound_offset),
+                                               axis=-1)
 
             if np.any(not_ignored):
                 transformed_children = pipeline.forward(children[not_ignored])
