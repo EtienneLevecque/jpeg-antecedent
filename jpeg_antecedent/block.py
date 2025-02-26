@@ -71,8 +71,8 @@ class Block:
         s = c * n * m  # (channel * row * column)
         upper_bound_offset = 0
         if self.is_clipped[pipeline]:
-            # clipped blocks violate upper bound constraint, thus the upper bound is increased by an arbitrary factor of 5
-            upper_bound_offset = 5 * pipeline.upper_bound
+            # clipped blocks violate upper bound constraint, thus the upper bound is increased by an arbitrary factor of 100
+            upper_bound_offset = 100 * pipeline.upper_bound
 
         mask = np.ravel(pipeline.pipelines[0].quant_tbl.astype(float) <= pipeline.upper_bound + upper_bound_offset)
         n_changes = np.sum(mask)
