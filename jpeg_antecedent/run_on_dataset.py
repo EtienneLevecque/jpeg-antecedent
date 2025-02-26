@@ -246,8 +246,12 @@ def get_image_from_output(path_to_csv, image_mask_output_dir, npy_mask_output_di
             status = int(group.iloc[i]['status'])
             is_clipped = bool(group.iloc[i]['is_clipped'])
 
-            if (status == -1 and not is_clipped) or (status == 0):  # and not is_clipped):
+            if status == -1 and not is_clipped:
                 mask[pos[0] * 8: (pos[0] + 1) * 8, pos[1] * 8: (pos[1] + 1) * 8] = 255
+            elif status == 0 or (status == -1 and is_clipped):
+                mask[pos[0] * 8: (pos[0] + 1) * 8, pos[1] * 8: (pos[1] + 1) * 8] = 128
+            elif status == 3:
+                mask[pos[0] * 8: (pos[0] + 1) * 8, pos[1] * 8: (pos[1] + 1) * 8] = 0
         pimg.fromarray(mask).save(os.path.join(image_mask_output_dir, filename) + '.png')
         np.save(os.path.join(npy_mask_output_dir, filename), mask)
 
