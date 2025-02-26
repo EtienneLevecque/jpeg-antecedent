@@ -1,6 +1,7 @@
-from jpeg_antecedent.jpeg_toolbox import jpeg_fdct_float, jpeg_fdct_ifast, jpeg_fdct_islow, jpeg_fdct_naive, jpeg_idct_naive, \
-    quantize_ifast_fdct, quantize_float_fdct, quantize_islow_fdct, quantize_naive_fdct, jpeg_idct_islow, \
-    define_quant_table, quality_scaling_law, rgb_to_ycc, ycc_to_rgb, rgb_to_ycc_float, ycc_to_rgb_float
+from jpeg_antecedent.jpeg_toolbox import jpeg_fdct_float, jpeg_fdct_ifast, jpeg_fdct_islow, jpeg_fdct_naive, \
+    jpeg_idct_naive, quantize_ifast_fdct, quantize_float_fdct, quantize_islow_fdct, quantize_naive_fdct, \
+    jpeg_idct_islow, define_quant_table, quality_scaling_law, rgb_to_ycc, ycc_to_rgb, rgb_to_ycc_float, \
+    ycc_to_rgb_float, jpeg_idct_float
 from jpeg_antecedent.utils import round
 import numpy as np
 
@@ -149,7 +150,7 @@ class IslowPipeline(JPEGPipeline):
 
     def dct(self, blocks):
         return quantize_islow_fdct(jpeg_fdct_islow(blocks), quant_tbl=self.quant_tbl[:blocks.shape[1]],
-                                   return_int=False)
+                                   return_int=self.return_rounded)
 
     def idct(self, blocks):
         return jpeg_idct_islow(blocks, self.quant_tbl[:blocks.shape[1]])
@@ -178,11 +179,11 @@ class IfastPipeline(JPEGPipeline):
         return name == 'ifast'
 
     def dct(self, blocks):
-        return quantize_ifast_fdct(jpeg_fdct_ifast(blocks - 128), quant_tbl=self.quant_tbl[:blocks.shape[1]],
+        return quantize_ifast_fdct(jpeg_fdct_ifast(blocks), quant_tbl=self.quant_tbl[:blocks.shape[1]],
                                    return_int=self.return_rounded)
 
     def idct(self, blocks):
-        return jpeg_idct_naive(blocks, self.quant_tbl[:blocks.shape[1]]) + 128  # jpeg_idct_fast not implemented yet
+        return jpeg_idct_naive(blocks, self.quant_tbl[:blocks.shape[1]])  # jpeg_idct_fast not implemented yet
 
 
 class FloatPipeline(JPEGPipeline):
@@ -194,11 +195,11 @@ class FloatPipeline(JPEGPipeline):
         return name == 'float'
 
     def dct(self, blocks):
-        return quantize_float_fdct(jpeg_fdct_float(blocks - 128), quant_tbl=self.quant_tbl[:blocks.shape[1]],
+        return quantize_float_fdct(jpeg_fdct_float(blocks), quant_tbl=self.quant_tbl[:blocks.shape[1]],
                                    return_int=self.return_rounded)
 
     def idct(self, blocks):
-        return jpeg_idct_naive(blocks, self.quant_tbl[:blocks.shape[1]]) + 128  # jpeg_idct_float not implemented yet
+        return jpeg_idct_float(blocks, self.quant_tbl[:blocks.shape[1]])
 
 
 class ComposedPipeline:

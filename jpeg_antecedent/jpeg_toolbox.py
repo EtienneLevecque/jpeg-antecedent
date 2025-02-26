@@ -2,9 +2,17 @@ import numpy as np
 from jpeg_antecedent.utils import round
 from scipy.fft import dctn, idctn
 
-AAN_SCALE_FACTOR = np.array([1.0, 1.387039845, 1.306562965, 1.175875602,
-                             1.0, 0.785694958, 0.541196100, 0.275899379], dtype=np.float32)
-DCT_SCALE_FACTOR_FLT = 8. * AAN_SCALE_FACTOR.reshape(-1, 1) @ AAN_SCALE_FACTOR.reshape(1, -1)
+AAN_SCALE_FACTOR_FLOAT = np.array([1.0, 1.387039845, 1.306562965, 1.175875602,
+                                   1.0, 0.785694958, 0.541196100, 0.275899379], dtype=np.float32)
+AAN_SCALE_FACTOR_DOUBLE = np.array([1.0, 1.387039845, 1.306562965, 1.175875602,
+                                    1.0, 0.785694958, 0.541196100, 0.275899379], dtype=np.float64)
+
+IDCT_SCALE_FACTOR_FLT = np.zeros((8,8), dtype=np.float64)
+for i in range(8):
+    for j in range(8):
+        IDCT_SCALE_FACTOR_FLT[i,j] = AAN_SCALE_FACTOR_DOUBLE[i] * AAN_SCALE_FACTOR_DOUBLE[j]
+
+DCT_SCALE_FACTOR_FLT = 8. * AAN_SCALE_FACTOR_FLOAT.reshape(-1, 1) @ AAN_SCALE_FACTOR_FLOAT.reshape(1, -1)
 
 DCT_SCALE_FACTOR_IFAST = np.array([16384, 22725, 21407, 19266, 16384, 12873, 8867, 4520,
                                    22725, 31521, 29692, 26722, 22725, 17855, 12299, 6270,
@@ -40,6 +48,18 @@ CENTERJSAMPLE = 128
 MAXJSAMPLE = 255
 ONE_HALF = np.int32(1) << (SCALEBITS - 1)
 CBCR_OFFSET = CENTERJSAMPLE << SCALEBITS
+
+# Constants for the float DCT
+C_1 = np.array(0.707106781, dtype=np.float32)
+C_2 = np.array(0.382683433, dtype=np.float32)
+C_3 = np.array(0.541196100, dtype=np.float32)
+C_4 = np.array(1.306562965, dtype=np.float32)
+C_5 = np.array(0.707106781, dtype=np.float32)
+
+C_6 = np.array(1.414213562, dtype=np.float32)
+C_7 = np.array(1.847759065, dtype=np.float32)
+C_8 = np.array(1.082392200, dtype=np.float32)
+C_9 = np.array(2.613125930, dtype=np.float32)
 
 
 def fix(x): return np.int32(x * (np.int32(1) << SCALEBITS) + 0.5)
@@ -157,7 +177,7 @@ def jpeg_fdct_float(blocks: np.ndarray) -> np.ndarray:
 
     Returns: an array with the same shape as blocks with DCT values.
     """
-    blocks = np.transpose(blocks.astype(np.float32), (2, 3, 0, 1))
+    blocks = np.transpose(blocks.astype(np.float32) - 128, (2, 3, 0, 1))
     for row in range(8):
         blocks[row] = aan_dct_float(blocks[row])
     for column in range(8):
@@ -173,7 +193,7 @@ def jpeg_fdct_ifast(blocks: np.ndarray) -> np.ndarray:
 
     Returns: an array with the same shape as blocks with DCT values.
     """
-    blocks = np.transpose(blocks.astype(np.int32), (2, 3, 0, 1))
+    blocks = np.transpose(blocks.astype(np.int32) - 128, (2, 3, 0, 1))
     for row in range(8):
         blocks[row] = aan_dct_ifast(blocks[row])
     for column in range(8):
@@ -210,7 +230,7 @@ def jpeg_fdct_naive(blocks: np.ndarray) -> np.ndarray:
 
 
 def jpeg_idct_naive(blocks: np.ndarray, quant_tbl: np.ndarray) -> np.ndarray:
-    """
+    """jpeg_idct_naive
     Apply the naive mathematical IDCT transform to input.
     Args:
         blocks: an array of shape (batch, channels, row, column) = (None, 1 if grayscale or 3, 8, 8).
@@ -220,6 +240,26 @@ def jpeg_idct_naive(blocks: np.ndarray, quant_tbl: np.ndarray) -> np.ndarray:
     """
     blocks = blocks.astype(float)
     return idctn(blocks * quant_tbl.astype(np.uint16), axes=(-2, -1), norm='ortho') + 128
+
+
+def jpeg_idct_float(blocks: np.ndarray, quant_tbl: np.ndarray) -> np.ndarray:
+    """
+    Apply the floating-point integer IDCT transform to input.
+    Args:
+        blocks: an array of shape (batch, channels, row, column) = (None, 1 if grayscale or 3, 8, 8).
+        quant_tbl: an array of shape (channel, row, column) = (1 if grayscale or 3, 8, 8).
+
+    Returns: an array with the same shape as blocks with pixel values clipped to [0...255].
+    """
+    quant_tbl = (quant_tbl * IDCT_SCALE_FACTOR_FLT).astype(np.float32)
+    blocks = (blocks * quant_tbl).astype(np.float32)
+    blocks = np.transpose(blocks, (2, 3, 0, 1))
+    for column in range(8):
+        blocks[:, column] = aan_idct_float(blocks[:, column])
+    for row in range(8):
+        blocks[row] = aan_idct_float(blocks[row])
+
+    return np.clip(descale(np.transpose(blocks.astype(np.int32), (2, 3, 0, 1)), 3), -128, 127) + 128  # clip and offset
 
 
 def jpeg_idct_islow(blocks: np.ndarray, quant_tbl: np.ndarray) -> np.ndarray:
@@ -325,7 +365,7 @@ def aan_dct_float(vector: np.ndarray) -> np.ndarray:
     vector[0] = tmp10 + tmp11
     vector[4] = tmp10 - tmp11
 
-    z1 = (tmp12 + tmp13) * np.array(0.707106781, dtype=np.float32)
+    z1 = (tmp12 + tmp13) * C_1
     vector[2] = tmp13 + z1
     vector[6] = tmp13 - z1
 
@@ -333,10 +373,10 @@ def aan_dct_float(vector: np.ndarray) -> np.ndarray:
     tmp15 = tmp5 + tmp6
     tmp16 = tmp6 + tmp7
 
-    z5 = (tmp14 - tmp16) * np.array(0.382683433, dtype=np.float32)
-    z2 = np.array(0.541196100, dtype=np.float32) * tmp14 + z5
-    z4 = np.array(1.306562965, dtype=np.float32) * tmp16 + z5
-    z3 = tmp15 * np.array(0.707106781, dtype=np.float32)
+    z5 = (tmp14 - tmp16) * C_2
+    z2 = C_3 * tmp14 + z5
+    z4 = C_4 * tmp16 + z5
+    z3 = tmp15 * C_5
 
     z11 = tmp7 + z3
     z13 = tmp7 - z3
@@ -346,6 +386,55 @@ def aan_dct_float(vector: np.ndarray) -> np.ndarray:
     vector[1] = z11 + z4
     vector[7] = z11 - z4
 
+    return vector
+
+
+def aan_idct_float(vector: np.ndarray) -> np.ndarray:
+    tmp0 = vector[0]
+    tmp1 = vector[2]
+    tmp2 = vector[4]
+    tmp3 = vector[6]
+
+    tmp10 = tmp0 + tmp2
+    tmp11 = tmp0 - tmp2
+
+    tmp13 = tmp1 + tmp3
+    tmp12 = ((tmp1 - tmp3) * np.float32(1.414213562)) - tmp13  # C_6
+
+    tmp0 = tmp10 + tmp13
+    tmp3 = tmp10 - tmp13
+    tmp1 = tmp11 + tmp12
+    tmp2 = tmp11 - tmp12
+
+    tmp4 = vector[1]
+    tmp5 = vector[3]
+    tmp6 = vector[5]
+    tmp7 = vector[7]
+
+    z13 = tmp6 + tmp5
+    z10 = tmp6 - tmp5
+    z11 = tmp4 + tmp7
+    z12 = tmp4 - tmp7
+
+    tmp7 = z11 + z13
+    tmp11 = (z11 - z13) * np.float32(1.414213562)  # C_6
+
+    z5 = (z10 + z12) * np.float32(1.847759065)  # C_7
+    tmp10 = (np.float32(1.082392200) * z12) - z5  # C_8
+    tmp12 = (np.float32(-2.613125930) * z10) + z5  # C_9
+
+    tmp6 = tmp12 - tmp7
+    tmp5 = tmp11 - tmp6
+    tmp4 = tmp10 + tmp5
+
+    vector[0] = tmp0 + tmp7
+    vector[7] = tmp0 - tmp7
+    vector[1] = tmp1 + tmp6
+    vector[6] = tmp1 - tmp6
+    vector[2] = tmp2 + tmp5
+    vector[5] = tmp2 - tmp5
+    vector[4] = tmp3 + tmp4
+    vector[3] = tmp3 - tmp4
     return vector
 
 
