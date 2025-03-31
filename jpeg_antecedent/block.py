@@ -32,8 +32,7 @@ class Block:
                           max_iter: int,
                           shared_dict: dict = None,
                           task_id: int = None,
-                          verbose: bool = False,
-                          rng: np.random.RandomState = None):
+                          verbose: bool = False):
         """
         Search a dct antecedent to the spatial_block assuming it was obtained with the given pipeline.
 
@@ -49,8 +48,7 @@ class Block:
             results: an antecedent if it has been found, None otherwise
             iter_count: iteration counter
         """
-        if rng is None:
-            rng = np.random.RandomState(123)
+        queue_idx = 0
         iter_counter = 0
         c, n, m = self.value.shape
         target = np.array([self.value], dtype=np.int16)
@@ -64,7 +62,7 @@ class Block:
             self.iterations[pipeline] = 0
             return self.antecedents[pipeline]
 
-        queue = [(np.zeros(0), 0., start.astype(np.int16).copy())]
+        queue = [(np.zeros(0), queue_idx, start.astype(np.int16).copy())]
         start.flags.writeable = False
         open_set = {start.data.tobytes().__hash__()}
 
@@ -163,8 +161,8 @@ class Block:
 
                 else:
                     for idx in error_idx:
-                        to_enqueue = (int(error[idx]), rng.random(),
-                                      children[not_ignored][idx].copy())
+                        queue_idx += 1
+                        to_enqueue = (int(error[idx]), queue_idx, children[not_ignored][idx].copy())
 
                         heappush(queue, to_enqueue)
                         open_set.add(children_hash[not_ignored][idx])

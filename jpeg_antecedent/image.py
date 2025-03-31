@@ -84,7 +84,7 @@ class Image:
         if self.rng is None:
             self.rng = np.random.RandomState()
 
-    def search_antecedent(self, max_iter, shared_dict=None, task_id=None, verbose=False, rng=None):
+    def search_antecedent(self, max_iter, shared_dict=None, task_id=None, verbose=False):
         self.filter_blocks()
 
         if self.pipeline.n == 1 and self.is_jpeg and not self.is_grayscale:
@@ -96,7 +96,7 @@ class Image:
         for i, block in enumerate(blocks):
             self.update_shared_dict(shared_dict, task_id, i, n)
             if self.pipeline not in block.status:
-                block.search_antecedent(self.pipeline, max_iter, shared_dict, task_id, verbose, rng)
+                block.search_antecedent(self.pipeline, max_iter, shared_dict, task_id, verbose)
 
     def update_shared_dict(self, shared_dict, task_id, i, n, completed=0, total=0):
         if shared_dict is not None and task_id is not None:
@@ -107,7 +107,7 @@ class Image:
                                     "total": total,
                                     "started": True}
 
-    def search_antecedent_independent_channel(self, max_iter, shared_dict=None, task_id=None, verbose=False, rng=None):
+    def search_antecedent_independent_channel(self, max_iter, shared_dict=None, task_id=None, verbose=False):
         names = [pipe.name for pipe in self.pipeline]
         qualities = [pipe.quality for pipe in self.pipeline]
         grayscale_pipeline = create_pipeline(names, qualities, grayscale=True, target_is_dct=True)
@@ -127,12 +127,12 @@ class Image:
                 iterations.append(0)
                 continue
 
-            antecedent = block.search_antecedent(grayscale_pipeline, max_iter, shared_dict, task_id, verbose, rng)
+            antecedent = block.search_antecedent(grayscale_pipeline, max_iter, shared_dict, task_id, verbose)
             iteration = block.iterations[grayscale_pipeline]
             if antecedent is None:
                 antecedent = -np.ones((1, 8, 8))
                 status = 0
-            elif antecedent == False:
+            elif not antecedent:
                 status = -1
             else:
                 status = 1
