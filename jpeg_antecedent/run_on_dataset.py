@@ -109,7 +109,7 @@ def handle_image(filename, config, shared_dict, output_queue, task_id, verbose):
     img.set_selection_parameter(preprocessing['sorting_method'], preprocessing['percentage_block_per_image'], rng=rng)
 
     if search_config['heuristic_solver']['use']:
-        img.search_antecedent(max_iter_heuristic, shared_dict, task_id, verbose, rng)
+        img.search_antecedent(max_iter_heuristic, shared_dict, task_id, verbose)
 
     if search_config['gurobi_solver']['use']:
         img.search_antecedent_ilp(search_config['gurobi_solver'], shared_dict, task_id, verbose)
