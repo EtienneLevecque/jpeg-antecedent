@@ -117,8 +117,9 @@ class Block:
 
             else:
                 for idx in error_idx:
-                    to_enqueue = (int(error[idx]), rng.random(),
+                    to_enqueue = (int(error[idx]), queue_idx,
                                   children[not_ignored_first_iteration][idx].copy())
+                    queue_idx += 1
 
                     heappush(queue, to_enqueue)
                     open_set.add(children_hash_first_iteration[not_ignored_first_iteration][idx])
